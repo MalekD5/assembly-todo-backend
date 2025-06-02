@@ -1,0 +1,61 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install NASM
+      run: |
+        choco install nasm -y
+      shell: pwsh
+
+    - name: Install MinGW-w64
+      run: |
+        choco install mingw -y
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      shell: pwsh
+
+    - name: Verify NASM and GCC
+      run: |
+        nasm -v
+        gcc --version
+      shell: pwsh
+
+    - name: Build project
+      run: |
+        make build
+      shell: pwsh
+
+    - name: Copy output binary
+      id: bin
+      run: |
+        Copy-Item .\main.exe $env:RUNNER_TEMP\main.exe
+        echo "path=$env:RUNNER_TEMP\main.exe" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Set version tag
+      id: version
+      run: |
+        $date = Get-Date -Format "yyyyMMdd"
+        $patch = $env:GITHUB_RUN_NUMBER
+        $tag = "v1.0.$patch-$date"
+        echo "tag=$tag" >> $env:GITHUB_OUTPUT
+        echo "name=Release $tag" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.version.outputs.tag }}
+        name: ${{ steps.version.outputs.name }}
+        artifacts: ${{ steps.bin.outputs.path }}
+        generateReleaseNotes: true
