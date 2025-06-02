@@ -13,18 +13,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install NASM
-      run: |
-        choco install nasm -y
-        $nasmPath = Get-ChildItem 'C:\ProgramData\chocolatey\lib\nasm\tools' | Select-Object -First 1
-        echo "$($nasmPath.FullName)" | Out-File -FilePath $env:GITHUB_PATH -Append
-      shell: pwsh
+    - name: Set up NASM
+      uses: ilammy/setup-nasm@v1
 
-    - name: Install MinGW-w64
-      run: |
-        choco install mingw -y
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-      shell: pwsh
+    - name: Set up MinGW-w64
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
 
     - name: Verify NASM and GCC
       run: |
