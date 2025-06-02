@@ -5,26 +5,24 @@ extern bind
 extern listen
 extern accept
 extern send
+extern shutdown
 extern closesocket
 extern Sleep
 extern printf
 
 section .data
-    wsadata resb 400
-    
-  
     sockaddr_in:
         dw 2
         dw 0xB80B ; Port 3000
         dd 0
         dd 0
-    
     format_str db "%s", 10, 0                 ; "%s\n"
     server_on db "Server is running on port 3000", 0
     response db "HTTP/1.1 200 OK",13,10,"Content-Length: 12",13,10,13,10,"Hello World!",0
     response_len equ $-response
 
 section .bss
+    wsadata resb 400
     listen_socket resq 1
     client_socket resq 1
 
@@ -57,27 +55,45 @@ main:
     mov edx, 5
     call listen
 
-
-
-accept_loop:
+.accept_loop:
     mov rcx, [rel listen_socket]
     xor rdx, rdx              
     xor r8, r8
     call accept
     mov [rel client_socket], rax
 
+    lea rsi, [rel response]
+    mov rbx, response_len
+
+.send_loop:
     mov rcx, [rel client_socket]
-    lea rdx, [rel response]
-    mov r8d, response_len
-    mov r9d, 0
+    mov rdx, rsi
+    mov r8d, ebx
+    xor r9d, r9d
     call send
-    mov ecx, 100
-    call Sleep
+
+    cmp rax, 0
+    jl .send_failed
+
+    add rsi, rax
+
+    ; to prevent mixing 32-bit and 64-bit registers
+    mov eax, eax
+    add esi, eax
+    sub ebx, eax
     
+    test rbx, rbx
+    jnz .send_loop
+
+    mov rcx, [rel client_socket]
+    mov edx, 1
+    call shutdown
+
+.send_failed:
     mov rcx, [rel client_socket]
     call closesocket
 
-    jmp accept_loop
+    jmp .accept_loop
 
     mov rcx, 0
     call WSACleanup
