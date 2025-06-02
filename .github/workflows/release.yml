@@ -16,6 +16,8 @@ jobs:
     - name: Install NASM
       run: |
         choco install nasm -y
+        $nasmPath = Get-ChildItem 'C:\ProgramData\chocolatey\lib\nasm\tools' | Select-Object -First 1
+        echo "$($nasmPath.FullName)" | Out-File -FilePath $env:GITHUB_PATH -Append
       shell: pwsh
 
     - name: Install MinGW-w64
