@@ -16,11 +16,6 @@ jobs:
     - name: Set up NASM
       uses: ilammy/setup-nasm@v1
 
-    - name: Set up MinGW-w64
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
-
     - name: Verify NASM and GCC
       run: |
         nasm -v
