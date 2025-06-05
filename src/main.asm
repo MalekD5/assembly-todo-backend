@@ -7,24 +7,39 @@ extern accept
 extern send
 extern shutdown
 extern closesocket
-extern Sleep
 extern printf
+extern recv 
+extern lookup
+extern ExitProcess
+
+extern fail_socket
+extern fail_bind
+extern fail_listen
+extern fail_404
+extern format_str
+
+extern register_routes
+
+global wsadata
+global listen_socket
+
+section .bss
+    global client_socket
+    wsadata resb 400
+    listen_socket resq 1
+    client_socket resq 1
+    recv_buffer resb 2048
+    method_buffer resb 8
+    route_buffer resb 2048
 
 section .data
     sockaddr_in:
         dw 2
-        dw 0xB80B ; Port 3000
+        dw 0xB80B
         dd 0
         dd 0
-    format_str db "%s", 10, 0                 ; "%s\n"
-    server_on db "Server is running on port 3000", 0
-    response db "HTTP/1.1 200 OK",13,10,"Content-Length: 12",13,10,13,10,"Hello World!",0
-    response_len equ $-response
 
-section .bss
-    wsadata resb 400
-    listen_socket resq 1
-    client_socket resq 1
+    server_on db "Server is running on port 3000", 0
 
 section .text
 global main
@@ -32,72 +47,115 @@ global main
 main:
     sub rsp, 40
 
-    lea rcx, [rel format_str]
-    lea rdx, [rel server_on]
-    call printf
+    call register_routes
 
     mov ecx, 0x0202
     lea rdx, [rel wsadata]
     call WSAStartup
 
-    mov ecx, 2                 ; AF_INET
-    mov edx, 1                 ; SOCK_STREAM
-    mov r8d, 6                 ; IPPROTO_TCP
+    mov ecx, 2
+    mov edx, 1
+    mov r8d, 6
     call socket
+    cmp rax, -1
+    je .fail_socket_ins
     mov [rel listen_socket], rax
 
     mov rcx, [rel listen_socket]
     lea rdx, [rel sockaddr_in]
     mov r8d, 16
     call bind
+    cmp rax, -1
+    je .fail_bind_ins
 
     mov rcx, [rel listen_socket]
-    mov edx, 5
+    mov edx, 100
     call listen
+    cmp rax, -1
+    je .fail_listen_ins
+
+    lea rcx, [rel format_str]
+    lea rdx, [rel server_on]
+    call printf
 
 .accept_loop:
     mov rcx, [rel listen_socket]
-    xor rdx, rdx              
+    xor rdx, rdx
     xor r8, r8
     call accept
     mov [rel client_socket], rax
 
-    lea rsi, [rel response]
-    mov rbx, response_len
-
-.send_loop:
     mov rcx, [rel client_socket]
-    mov rdx, rsi
-    mov r8d, ebx
+    lea rdx, [rel recv_buffer]
+    mov r8d, 2048
     xor r9d, r9d
-    call send
+    call recv
 
-    cmp rax, 0
-    jl .send_failed
+    lea rsi, [rel recv_buffer]
+    lea rdi, [rel method_buffer]
+    mov rcx, 7
+.copy_method:
+    lodsb
+    cmp al, ' '
+    je .end_method
+    stosb
+    loop .copy_method
+.end_method:
+    mov byte [rdi], 0
 
-    add rsi, rax
+    lea rdi, [rel route_buffer]
+    mov rcx, 64
+.copy_path:
+    lodsb
+    cmp al, ' '
+    je .end_path
+    stosb
+    loop .copy_path
+.end_path:
+    mov byte [rdi], 0
 
-    ; to prevent mixing 32-bit and 64-bit registers
-    mov eax, eax
-    add esi, eax
-    sub ebx, eax
-    
-    test rbx, rbx
-    jnz .send_loop
+    lea rcx, [rel format_str]
+    lea rdx, [rel method_buffer]
+    call printf
+    lea rcx, [rel format_str]
+    lea rdx, [rel route_buffer]
+    call printf
 
+    lea rcx, [rel method_buffer]
+    lea rdx, [rel route_buffer]
+    call lookup
+    test rax, rax
+    jnz .call_handler
+
+    call fail_404
+    jmp .cleanup
+
+.call_handler:
+    call rax
+
+.cleanup:
     mov rcx, [rel client_socket]
+
     mov edx, 1
     call shutdown
 
-.send_failed:
     mov rcx, [rel client_socket]
     call closesocket
 
     jmp .accept_loop
 
-    mov rcx, 0
-    call WSACleanup
+.fail_socket_ins:
+    call fail_socket
+    jmp .exit
 
-    add rsp, 40
-    xor eax, eax
-    ret
+.fail_bind_ins:
+    call fail_bind
+    jmp .exit
+
+.fail_listen_ins:
+    call fail_listen
+    jmp .exit
+
+.exit:
+    xor ecx, ecx
+    call ExitProcess
