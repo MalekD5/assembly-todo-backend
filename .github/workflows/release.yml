@@ -25,6 +25,9 @@ jobs:
         gcc --version
       shell: pwsh
 
+    - name: Prepare output directory
+      run: mkdir dist
+      shell: pwsh      
     - name: Build project
       run: |
         make build
@@ -33,8 +36,8 @@ jobs:
     - name: Copy output binary
       id: bin
       run: |
-        Copy-Item .\main.exe $env:RUNNER_TEMP\main.exe
-        echo "path=$env:RUNNER_TEMP\main.exe" >> $env:GITHUB_OUTPUT
+        Copy-Item .\dist\backend.exe $env:RUNNER_TEMP\backend.exe
+        echo "path=$env:RUNNER_TEMP\backend.exe" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
     - name: Set version tag
