@@ -39,6 +39,8 @@ section .data
         dd 0
         dd 0
 
+    cleanup db "cleanup", 10, 0
+    loop_enter db "entering loop", 10, 0 
     server_on db "Server is running on port 3000", 0
 
 section .text
@@ -79,6 +81,9 @@ main:
     call printf
 
 .accept_loop:
+    lea rcx, [rel cleanup]
+    call printf
+
     mov rcx, [rel listen_socket]
     xor rdx, rdx
     xor r8, r8
@@ -121,6 +126,14 @@ main:
     lea rdx, [rel route_buffer]
     call printf
 
+     mov al, byte [rel method_buffer]
+    test al, al
+    je .accept_loop
+
+    mov al, byte [rel route_buffer]
+    test al, al
+    je .accept_loop
+
     lea rcx, [rel method_buffer]
     lea rdx, [rel route_buffer]
     call lookup
@@ -134,6 +147,9 @@ main:
     call rax
 
 .cleanup:
+    lea rcx, [rel cleanup]
+    call printf
+    
     mov rcx, [rel client_socket]
 
     mov edx, 1
@@ -142,7 +158,12 @@ main:
     mov rcx, [rel client_socket]
     call closesocket
 
+    lea rcx, [rel cleanup]
+    call printf
+
     jmp .accept_loop
+
+    ret
 
 .fail_socket_ins:
     call fail_socket
