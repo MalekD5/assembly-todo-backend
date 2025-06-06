@@ -1,21 +1,23 @@
 extern todo_total
 extern client_socket
-extern send
+extern send_response
 extern sprintf
 extern printf
 extern strlen
+extern strcat
 
 section .data
     a db "Test", 0
     count_response_fmt db "HTTP/1.1 200 OK",13,10
-                       db "Content-Type: text/plain",13,10
+                       db "Content-Type: application/json",13,10
                        db "Content-Length: %d",13,10
-                       db "Connection: close",13,10,13,10
-                       db "%d",0
+                       db "Connection: close",13,10,13,10,0
+    json_response_fmt  db '{ "count": %d }',0
     debug_msg db "Sending count response",10,0
 
 section .bss
-    response_buffer resb 256
+    json_response_buffer resb 256
+    response_buffer resb 2048
     body_buffer     resb 16
 
 section .text
@@ -27,28 +29,30 @@ get_todos_count:
     call todo_total
     mov ecx, eax
     mov edx, eax
-    mov r9d, eax
+
+    lea rcx, [rel json_response_buffer]
+    lea rdx, [rel json_response_fmt]
+    mov r8d, eax
+    xor r9d, r9d
+    call sprintf
+
+    lea  rcx, [rel json_response_buffer]
+    call strlen
 
     lea rcx, [rel response_buffer]
     lea rdx, [rel count_response_fmt]
-    mov r8d, 1
-    xor r9d, eax
+    mov r8d, eax
     call sprintf
+
+    lea rcx, [rel response_buffer]
+    lea rdx, [rel json_response_buffer]
+    call strcat
 
     lea rcx, [rel debug_msg]
     call printf
 
     lea rsi, [rel response_buffer]
     xor ecx, ecx
-.len_loop:
-    mov al, [rsi + rcx]
-    test al, al
-    je .len_done
-    inc ecx
-    jmp .len_loop
-.len_done:
-    lea rcx, [rel a]
-    call printf
 
     lea rcx, [rel response_buffer]
     call printf
@@ -57,10 +61,10 @@ get_todos_count:
     call strlen
     mov r8d, eax
 
-    mov rcx, [rel client_socket]
     lea rdx, [rel response_buffer]
     xor r9d, r9d
-    call send
+    call send_response
 
     add rsp, 40
+
     ret
