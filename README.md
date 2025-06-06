@@ -4,12 +4,13 @@ A (Work in Progress) todo backend written in assembly. Built using NASM and MinG
 ## TODO
  - [ ] Add a proper README
  - [ ] Multithreading 
- - Finish basic CRUD operations
+ - [ ] Finish basic CRUD operations
    - [x] todos count
    - [ ] create todo
    - [ ] delete todo
    - [ ] update todo
-   - [ ] get todo
+   - [ ] get todo/:id
+   - [ ] get todos
  - [ ] Add a proper database (*currently using an in-memory array*)
  - [ ] Dockerfile
  - [ ] add e2e testing
