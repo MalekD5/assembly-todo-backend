@@ -4,8 +4,8 @@ A (Work in Progress) todo backend written in assembly. Built using NASM and MinG
 ## TODO
  - [ ] Add a proper README
  - [ ] Multithreading 
- - [ ] Finish basic CRUD operations
-   - [ ] todos count
+ - Finish basic CRUD operations
+   - [x] todos count
    - [ ] create todo
    - [ ] delete todo
    - [ ] update todo
