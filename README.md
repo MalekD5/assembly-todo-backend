@@ -2,18 +2,18 @@
 A (Work in Progress) todo backend written in assembly. Built using NASM and MinGW64.
 
 ## TODO
- - Add a proper README []
- - Multithreading []
- - Finish basic CRUD operations
-   - todos count [x]
-   - create todo []
-   - delete todo []
-   - update todo []
-   - get todo []
- - Add a proper database [] (currently using an in-memory array)
- - Dockerfile []
- - add e2e testing []
- - add unit testing []
- - Deploy this project using Docker []
+ - [ ] Add a proper README
+ - [ ] Multithreading 
+ - [ ] Finish basic CRUD operations
+   - [ ] todos count
+   - [ ] create todo
+   - [ ] delete todo
+   - [ ] update todo
+   - [ ] get todo
+ - [ ] Add a proper database (*currently using an in-memory array*)
+ - [ ] Dockerfile
+ - [ ] add e2e testing
+ - [ ] add unit testing
+ - [ ] Deploy this project using Docker
  
 Last updated: 2025-06-06
