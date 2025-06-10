@@ -1,24 +1,13 @@
-extern WSAStartup
-extern WSACleanup
-extern socket
-extern bind
-extern listen
-extern accept
-extern send
-extern shutdown
-extern closesocket
-extern printf
-extern recv 
-extern lookup
-extern ExitProcess
+%include "src/macros/conn_struc.inc"
+%include "src/macros/thread.inc"
 
-extern fail_socket
-extern fail_bind
-extern fail_listen
-extern fail_404
-extern format_str
+extern WSAStartup, WSACleanup, socket, bind, listen, accept, send, shutdown, closesocket, printf, recv, lookup, ExitProcess
 
-extern register_routes
+extern GetProcessHeap, HeapAlloc, HeapFree, CreateThread
+
+extern fail_socket, fail_bind, fail_listen, fail_404, format_str
+
+extern register_routes, cleanup_socket
 
 global wsadata
 global listen_socket
@@ -39,6 +28,7 @@ section .data
         dd 0
         dd 0
 
+    unexpected_error db "Unexpected error", 10, 0
     cleanup db "cleanup", 10, 0
     loop_enter db "entering loop", 10, 0 
     server_on db "Server is running on port 3000", 0
@@ -81,23 +71,36 @@ main:
     call printf
 
 .accept_loop:
-    lea rcx, [rel cleanup]
-    call printf
-
     mov rcx, [rel listen_socket]
     xor rdx, rdx
     xor r8, r8
     call accept
     mov [rel client_socket], rax
 
-    mov rcx, [rel client_socket]
+    mov r12, rax ; store the client_socket in r12 temporarily, preparing for HeapAlloc call so we don't lose the socket context
+
+    call GetProcessHeap
+    mov rbx, rax
+
+    mov rcx, rbx
+    xor rdx, rdx
+    mov r8, connection_size
+    call HeapAlloc
+
+    test rax, rax ; if HeapAlloc failed, we're done
+    jz .exit
+
+    mov r15, rax ; store the pointer to the conn struct in r11
+    mov [r15 + connection.client_socket], r12 ; store the client_socket in the conn struct
+
+    mov rcx, [r15 + connection.client_socket]
     lea rdx, [rel recv_buffer]
     mov r8d, 2048
     xor r9d, r9d
     call recv
 
     lea rsi, [rel recv_buffer]
-    lea rdi, [rel method_buffer]
+    lea rdi, [r15 + connection.method]
     mov rcx, 7
 .copy_method:
     lodsb
@@ -108,7 +111,7 @@ main:
 .end_method:
     mov byte [rdi], 0
 
-    lea rdi, [rel route_buffer]
+    lea rdi, [r15 + connection.path]
     mov rcx, 64
 .copy_path:
     lodsb
@@ -120,50 +123,45 @@ main:
     mov byte [rdi], 0
 
     lea rcx, [rel format_str]
-    lea rdx, [rel method_buffer]
+    lea rdx, [r15 + connection.method] 
     call printf
     lea rcx, [rel format_str]
-    lea rdx, [rel route_buffer]
+    lea rdx, [r15 + connection.path]
     call printf
 
-     mov al, byte [rel method_buffer]
+    mov al, byte [r15 + connection.method]
     test al, al
     je .accept_loop
 
-    mov al, byte [rel route_buffer]
+    mov al, byte [r15 + connection.path]
     test al, al
     je .accept_loop
 
-    lea rcx, [rel method_buffer]
-    lea rdx, [rel route_buffer]
+    lea rcx, [r15 + connection.method]
+    lea rdx, [r15 + connection.path]
     call lookup
     test rax, rax
     jnz .call_handler
 
-    call fail_404
-    jmp .cleanup
-
-.call_handler:
-    call rax
-
-.cleanup:
-    lea rcx, [rel cleanup]
-    call printf
-    
-    mov rcx, [rel client_socket]
-
-    mov edx, 1
-    call shutdown
-
-    mov rcx, [rel client_socket]
-    call closesocket
-
-    lea rcx, [rel cleanup]
-    call printf
+    sub rsp, 16
+    mov rcx, [r15 + connection.client_socket]
+    call cleanup_socket
+    add rsp, 16
 
     jmp .accept_loop
 
-    ret
+.call_handler:
+    ; we call the route handler, and because of the shadow space alignment issue we need to add 40 to the stack pointer (windows calling convention)
+    mov r12, rax ; pointer to route handler
+
+    sub rsp, 40
+    call r12
+    add rsp, 40
+
+    mov rcx, [r15 + connection.client_socket]
+    call cleanup_socket
+
+    jmp .accept_loop
 
 .fail_socket_ins:
     call fail_socket
