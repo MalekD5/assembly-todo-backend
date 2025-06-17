@@ -1,4 +1,3 @@
-extern client_socket
 extern send
 extern fail_send_message
 
@@ -12,7 +11,9 @@ send_response:
     push rbx               ; preserve rbx
     push rdi               ; preserve rdi (callee-saved)
     push r12               ; we'll use r12 as length
+    push r15
 
+    mov r15, rcx           ; save connection pointer
     ; Compute length with null-terminator check
     xor r12, r12           ; r12 = total length counter
 .len_loop:
@@ -25,7 +26,7 @@ send_response:
 
     mov rdi, rsi           ; rdi = pointer to start of buffer
 .send_loop:
-    mov rcx, [rel client_socket] ; socket
+    mov rcx, r15           ; socket
     mov rdx, rdi           ; pointer to current buffer position
     mov r8d, r12d          ; number of bytes left to send
     xor r9d, r9d           ; flags = 0
@@ -41,6 +42,7 @@ send_response:
     test r12, r12
     jnz .send_loop         ; send remaining bytes
 
+    pop r15
     pop r12
     pop rdi
     pop rbx
@@ -49,6 +51,7 @@ send_response:
 .send_failed:
     call fail_send_message
     ; Still clean stack before return
+    pop r15
     pop r12
     pop rdi
     pop rbx

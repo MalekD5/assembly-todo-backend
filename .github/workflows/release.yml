@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-      
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -27,7 +27,8 @@ jobs:
 
     - name: Prepare output directory
       run: mkdir dist
-      shell: pwsh      
+      shell: pwsh
+
     - name: Build project
       run: |
         make build
@@ -50,10 +51,25 @@ jobs:
         echo "name=Release $tag" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
+    - name: Generate changelog from commits
+      id: changelog
+      run: |
+        git fetch --tags
+        $lastTag = git tag --sort=-creatordate | Select-Object -First 1
+        "@## Changes`n" | Out-File changelog.md -Encoding UTF8
+
+        if (-not $lastTag) {
+          git log --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
+        } else {
+          git log "$lastTag"..HEAD --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
+        }
+      shell: pwsh
+
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
       with:
         tag: ${{ steps.version.outputs.tag }}
         name: ${{ steps.version.outputs.name }}
         artifacts: ${{ steps.bin.outputs.path }}
+        bodyFile: changelog.md
         generateReleaseNotes: true

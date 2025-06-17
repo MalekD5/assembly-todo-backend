@@ -1,4 +1,3 @@
-extern client_socket
 extern send
 extern printf
 
@@ -42,12 +41,14 @@ fail_listen:
     call printf
     ret 
 
+; fail_404 (socket* connection = rcx)
 fail_404:
-    mov rcx, [rel client_socket]
     lea rdx, [rel response_404]
     mov r8d, response_404_len
     xor r9d, r9d
+    sub rsp, 40
     call send
+    add rsp, 40
     ret
 
 fail_send_message:
