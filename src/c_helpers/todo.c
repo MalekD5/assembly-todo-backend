@@ -25,6 +25,24 @@ const char *todo_get(int index)
     return 0;
 }
 
+void todo_delete(int index)
+{
+    if (index >= 0 && index < todo_count)
+    {
+        memmove(todo_list[index], todo_list[index + 1], MAX_LEN);
+        todo_count--;
+    }
+}
+
+void todo_update(int index, const char *text)
+{
+    if (index >= 0 && index < todo_count)
+    {
+        strncpy(todo_list[index], text, MAX_LEN - 1);
+        todo_list[index][MAX_LEN - 1] = 0; // null-terminate
+    }
+}
+
 int todo_total()
 {
     return todo_count;
