@@ -5,7 +5,7 @@ extern WSAStartup, WSACleanup, socket, bind, listen, accept, send, shutdown, clo
 
 extern GetProcessHeap, HeapAlloc, HeapFree, CreateThread
 
-extern fail_socket, fail_bind, fail_listen, fail_404, format_str
+extern fail_socket, fail_bind, fail_listen, format_str
 
 extern register_routes, cleanup_socket
 
@@ -13,10 +13,8 @@ global wsadata
 global listen_socket
 
 section .bss
-    global client_socket
     wsadata resb 400
     listen_socket resq 1
-    client_socket resq 1
     recv_buffer resb 2048
     method_buffer resb 8
     route_buffer resb 2048
@@ -75,7 +73,6 @@ main:
     xor rdx, rdx
     xor r8, r8
     call accept
-    mov [rel client_socket], rax
 
     mov r12, rax ; store the client_socket in r12 temporarily, preparing for HeapAlloc call so we don't lose the socket context
 
@@ -92,6 +89,23 @@ main:
 
     mov r15, rax ; store the pointer to the conn struct in r11
     mov [r15 + connection.client_socket], r12 ; store the client_socket in the conn struct
+
+    sub rsp, 20h
+
+    xor rcx, rcx
+    xor rdx, rdx
+    mov r8, .thread_proc
+    mov r9, r15
+    mov qword [rsp], 0
+    call CreateThread
+
+    add rsp, 20h
+
+    jmp .accept_loop
+
+.thread_proc:
+    sub rsp, 40
+    mov r15, rcx
 
     mov rcx, [r15 + connection.client_socket]
     lea rdx, [rel recv_buffer]
@@ -148,20 +162,25 @@ main:
     call cleanup_socket
     add rsp, 16
 
-    jmp .accept_loop
+    mov eax, 0
+    add rsp, 40
+    ret
 
 .call_handler:
     ; we call the route handler, and because of the shadow space alignment issue we need to add 40 to the stack pointer (windows calling convention)
     mov r12, rax ; pointer to route handler
 
     sub rsp, 40
+    mov rcx, [r15 + connection.client_socket]
     call r12
     add rsp, 40
 
     mov rcx, [r15 + connection.client_socket]
     call cleanup_socket
 
-    jmp .accept_loop
+    mov eax, 0
+    add rsp, 40
+    ret
 
 .fail_socket_ins:
     call fail_socket

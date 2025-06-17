@@ -2,7 +2,7 @@ extern todo_total
 
 extern GetProcessHeap, HeapAlloc, HeapFree
 
-extern client_socket, send_response
+extern send_response
 extern sprintf, printf, strlen, strcat
 
 struc response_struc
@@ -24,7 +24,10 @@ section .text
 global get_todos_count
 
 get_todos_count:
+    push r15
     sub rsp, 40
+
+    mov r14, rcx ; client connection 
 
     call GetProcessHeap
 
@@ -42,13 +45,11 @@ get_todos_count:
     mov ecx, eax
     mov edx, eax
 
-    sub rsp, 40
     lea rcx, [r15 + response_struc.json_response_buffer]
     lea rdx, [rel json_response_fmt]
     mov r8d, eax
     xor r9d, r9d
     call sprintf
-    add rsp, 40
 
     lea rcx, [r15 + response_struc.json_response_buffer]
     call strlen
@@ -75,21 +76,26 @@ get_todos_count:
     call strlen
     mov r8d, eax
 
+    mov rcx, r14 ; connection
     lea rdx, [r15 + response_struc.response_buffer]
     xor r9d, r9d
     call send_response
 
     call GetProcessHeap
-    mov rcx, rax
+    mov rbx, rax
+
+    mov rcx, rbx
     mov rdx, 0
     mov r8, r15
     call HeapFree
 
     add rsp, 40
+    pop r15
     ret
 
 .fail_heap_alloc:
     lea rcx, [rel heap_fail_msg]
     call printf
     xor ecx, ecx
+    pop r15
     ret
