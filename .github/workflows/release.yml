@@ -56,7 +56,7 @@ jobs:
       run: |
         git fetch --tags
         $lastTag = git tag --sort=-creatordate | Select-Object -First 1
-        "@## Changes`n" | Out-File changelog.md -Encoding UTF8
+        "## Changes`n" | Out-File changelog.md -Encoding UTF8
 
         if (-not $lastTag) {
           git log --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
