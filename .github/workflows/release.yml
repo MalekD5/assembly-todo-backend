@@ -37,7 +37,7 @@ jobs:
     - name: Copy output binary
       id: bin
       run: |
-        Copy-Item .\dist\backend.exe $env:RUNNER_TEMP\backend-win64.exe
+        Copy-Item .\dist\backend-win64.exe $env:RUNNER_TEMP\backend-win64.exe
         echo "path=$env:RUNNER_TEMP\backend-win64.exe" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
