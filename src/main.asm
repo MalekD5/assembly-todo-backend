@@ -15,9 +15,6 @@ global listen_socket
 section .bss
     wsadata resb 400
     listen_socket resq 1
-    recv_buffer resb 2048
-    method_buffer resb 8
-    route_buffer resb 2048
 
 section .data
     sockaddr_in:
@@ -26,9 +23,7 @@ section .data
         dd 0
         dd 0
 
-    unexpected_error db "Unexpected error", 10, 0
     cleanup db "cleanup", 10, 0
-    loop_enter db "entering loop", 10, 0 
     server_on db "Server is running on port 3000", 0
 
 section .text
@@ -108,12 +103,12 @@ main:
     mov r15, rcx
 
     mov rcx, [r15 + connection.client_socket]
-    lea rdx, [rel recv_buffer]
+    lea rdx, [r15 + connection.recv_buffer]
     mov r8d, 2048
     xor r9d, r9d
     call recv
 
-    lea rsi, [rel recv_buffer]
+    lea rsi, [r15 + connection.recv_buffer]
     lea rdi, [r15 + connection.method]
     mov rcx, 7
 .copy_method:
