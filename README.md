@@ -3,7 +3,7 @@ A (Work in Progress) todo backend written in assembly. Built using NASM and MinG
 
 ## TODO
  - [ ] Add a proper README
- - [ ] Multithreading 
+ - [x] Multithreading 
  - [ ] Finish basic CRUD operations
    - [x] todos count
    - [ ] create todo
@@ -17,4 +17,4 @@ A (Work in Progress) todo backend written in assembly. Built using NASM and MinG
  - [ ] add unit testing
  - [ ] Deploy this project using Docker
  
-Last updated: 2025-06-06
+Last updated: 2025-06-17
