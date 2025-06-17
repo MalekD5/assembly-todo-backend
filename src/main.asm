@@ -5,7 +5,7 @@ extern WSAStartup, WSACleanup, socket, bind, listen, accept, send, shutdown, clo
 
 extern GetProcessHeap, HeapAlloc, HeapFree, CreateThread
 
-extern fail_socket, fail_bind, fail_listen, format_str
+extern fail_socket, fail_bind, fail_listen, format_str, fail_404
 
 extern register_routes, cleanup_socket
 
@@ -156,6 +156,9 @@ main:
     call lookup
     test rax, rax
     jnz .call_handler
+
+    mov rcx, [r15 + connection.client_socket]
+    call fail_404
 
     sub rsp, 16
     mov rcx, [r15 + connection.client_socket]
