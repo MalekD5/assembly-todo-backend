@@ -1,4 +1,3 @@
-extern client_socket
 extern send
 extern printf
 
@@ -21,7 +20,6 @@ section .text
 global fail_socket
 global fail_bind
 global fail_listen
-global fail_404
 global fail_send_message
 
 fail_socket:
@@ -41,17 +39,6 @@ fail_listen:
     lea rdx, [rel listen_fail_msg]
     call printf
     ret 
-
-fail_404:
-
-    mov rcx, [rel client_socket]
-    lea rdx, [rel response_404]
-    mov r8d, response_404_len
-    xor r9d, r9d
-    sub rsp, 40
-    call send
-    add rsp, 40
-    ret
 
 fail_send_message:
     lea rcx, [rel format_str]
