@@ -7,7 +7,7 @@ extern GetProcessHeap, HeapAlloc, HeapFree, CreateThread
 
 extern fail_socket, fail_bind, fail_listen, format_str, fail_404
 
-extern register_routes, cleanup_socket
+extern register_routes, cleanup_socket, find_http_body_offset
 
 global wsadata
 global listen_socket
@@ -107,6 +107,12 @@ main:
     mov r8d, 2048
     xor r9d, r9d
     call recv
+
+    lea rcx, [r15 + connection.recv_buffer] 
+    mov rdx, 2048
+    call find_http_body_offset
+
+    mov [r15 + connection.body_offset], rax
 
     lea rsi, [r15 + connection.recv_buffer]
     lea rdi, [r15 + connection.method]
