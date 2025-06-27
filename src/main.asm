@@ -108,6 +108,8 @@ main:
     xor r9d, r9d
     call recv
 
+    mov [r15 + connection.bytes_received], rax
+
     lea rcx, [r15 + connection.recv_buffer] 
     mov rdx, 2048
     call find_http_body_offset

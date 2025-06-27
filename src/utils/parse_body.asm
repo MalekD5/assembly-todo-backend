@@ -12,22 +12,26 @@ section .text
 global parse_json_body
 
 parse_json_body:
+    push rbx
     push rsi
-    push rcx
+    push rdi
 
-    ; rcx = connection*
-    mov rsi, rcx
+    mov rbx, rcx
 
-    ; Load body offset
-    mov rax, [rsi + connection.body_offset]
+    lea rsi, [rbx + connection.recv_buffer]
 
-    ; rsi = recv_buffer base
-    lea rsi, [rsi + connection.recv_buffer]
-    add rsi, rax              ; rsi = pointer to JSON body
+    mov rax, [rbx + connection.bytes_received]
 
-    mov rcx, rsi              ; arg: char* json_string
-    call cJSON_Parse          ; returns cJSON* in rax
+    add rsi, rax
+    mov byte [rsi], 0
 
-    pop rcx
+    mov rax, [rbx + connection.body_offset]
+    lea rcx, [rbx + connection.recv_buffer + rax]
+    call cJSON_Parse
+
+    mov [rbx + connection.json_root], rax
+
+    pop rdi
     pop rsi
+    pop rbx
     ret
