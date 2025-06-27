@@ -42,16 +42,6 @@ post_todo:
     lea rcx, [rel rax]
     call printf
 
-    call GetProcessHeap
-
-    mov rcx, rax
-    xor rdx, rdx
-    mov r8, response_struc_size
-    call HeapAlloc
-    
-    test rax, rax
-    jz .fail_heap_alloc
-
     mov rcx, [r15 + connection.json_root]
     lea rdx, [rel key_name]
     call cJSON_GetObjectItemCaseSensitive
@@ -69,22 +59,7 @@ post_todo:
     xor r9d, r9d
     call send_response
 
-    call GetProcessHeap
-    mov rbx, rax
-
-    mov rcx, rbx
-    mov rdx, 0
-    mov r8, r15
-    call HeapFree
-
     add rsp, 40
-    pop r15
-    ret
-
-.fail_heap_alloc:
-    lea rcx, [rel heap_fail_msg]
-    call printf
-    xor ecx, ecx
     pop r15
     ret
 
