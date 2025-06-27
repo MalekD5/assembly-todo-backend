@@ -9,6 +9,8 @@ extern fail_socket, fail_bind, fail_listen, format_str, fail_404
 
 extern register_routes, cleanup_socket, find_http_body_offset
 
+extern todo_init
+
 global wsadata
 global listen_socket
 
@@ -32,6 +34,7 @@ global main
 main:
     sub rsp, 40
 
+    call todo_init
     call register_routes
 
     mov ecx, 0x0202
