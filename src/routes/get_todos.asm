@@ -7,7 +7,7 @@ extern sprintf, printf, strlen, strcat, strcpy, free, sizeof, puts
 
 extern GetProcessHeap, HeapAlloc, HeapFree
 
-extern cJSON_GetObjectItemCaseSensitive, cJSON_GetStringValue, cJSON_Print, cJSON_CreateObject, cJSON_CreateArray, cJSON_AddItemToObject, cJSON_PrintUnformatted, cJSON_AddItemToArray, cJSON_CreateString
+extern cJSON_GetObjectItemCaseSensitive, cJSON_GetStringValue, cJSON_Print, cJSON_CreateObject, cJSON_CreateArray, cJSON_AddItemToObject, cJSON_PrintUnformatted, cJSON_AddItemToArray, cJSON_CreateString, cJSON_AddNumberToObject, cJSON_AddStringToObject, cJSON_CreateNumber
 
 struc todos_struc
     .json_root resq 1
@@ -29,6 +29,8 @@ section .data
 
 section .rodata
     key_name db "data", 0
+    id_key    db "id", 0
+    text_key  db "text", 0
 
 section .text
 global get_todos
@@ -66,20 +68,36 @@ get_todos:
     mov rbx, [r13 + todos_struc.list] ; load pointer to array
 
 .array_loop:
-    mov rax, [rbx]
+    mov rax, [rbx]               ; rax = pointer to TodoItem
     test rax, rax
     je .stop_array_loop
 
     mov rsi, rax
-    mov rcx, rsi
-    call cJSON_CreateString
+    ; Create JSON object for each item
+    call cJSON_CreateObject
+    mov r12, rax                 ; save cJSON * for this item
 
+    ; Add ID field: rcx = cJSON*, rdx = key, r8 = value
+    mov rcx, r12
+    lea rdx, [rel id_key]        ; "id"
+    mov r8d, [rsi]               ; load int id from [TodoItem.id]
+    call cJSON_AddStringToObject
+
+    ; Add text field
+    mov rcx, r12
+    lea rdx, [rel text_key]      ; "text"
+    mov rsi, [rsi + 8]           ; text pointer from [TodoItem.text]
+    mov r8, rsi
+    call cJSON_AddStringToObject
+
+    ; Append this object to the array
     mov rcx, [r13 + todos_struc.json_array]
-    mov rdx, rax
+    mov rdx, r12
     call cJSON_AddItemToArray
 
-    add rbx, 8
+    add rbx, 8                   ; next TodoItem*
     jmp .array_loop
+
 .stop_array_loop:
     mov rcx, [r13 + todos_struc.json_root]
     lea rdx, [rel key_name]
