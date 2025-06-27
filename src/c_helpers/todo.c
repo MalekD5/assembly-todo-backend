@@ -66,3 +66,21 @@ int todo_total()
 {
     return todo_list.count;
 }
+
+char **get_todos_array()
+{
+    if (todo_list.count == 0)
+        return NULL;
+
+    // Allocate array of pointers + 1 for NULL termination
+    char **arr = malloc(sizeof(char *) * (todo_list.count + 1));
+    if (!arr)
+        return NULL;
+
+    for (int i = 0; i < todo_list.count; ++i)
+        arr[i] = todo_list.items[i]; // point to existing strings
+
+    arr[todo_list.count] = NULL; // NULL-terminate the array
+
+    return arr;
+}
