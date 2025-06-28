@@ -54,14 +54,17 @@ jobs:
     - name: Generate changelog from commits
       id: changelog
       run: |
-        git fetch --tags
-        $lastTag = git tag --sort=-creatordate | Select-Object -First 1
+        git fetch origin main --tags
+      
+        $lastTag = (git tag --sort=-creatordate)[-1].Trim()
+        Write-Host "Latest tag: $lastTag"
+      
         "## Changes`n" | Out-File changelog.md -Encoding UTF8
-
-        if (-not $lastTag) {
-          git log --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
+      
+        if ([string]::IsNullOrWhiteSpace($lastTag)) {
+          git log origin/main --since="1 week ago" --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
         } else {
-          git log "$lastTag"..HEAD --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
+          git log "$lastTag"..origin/main --pretty=format:"- %s" | Out-File -Append changelog.md -Encoding UTF8
         }
       shell: pwsh
 
