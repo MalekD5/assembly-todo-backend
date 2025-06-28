@@ -7,7 +7,9 @@ extern GetProcessHeap, HeapAlloc, HeapFree, CreateThread
 
 extern fail_socket, fail_bind, fail_listen, format_str, fail_404
 
-extern register_routes, cleanup_socket
+extern register_routes, cleanup_socket, find_http_body_offset
+
+extern todo_init
 
 global wsadata
 global listen_socket
@@ -15,9 +17,6 @@ global listen_socket
 section .bss
     wsadata resb 400
     listen_socket resq 1
-    recv_buffer resb 2048
-    method_buffer resb 8
-    route_buffer resb 2048
 
 section .data
     sockaddr_in:
@@ -26,9 +25,7 @@ section .data
         dd 0
         dd 0
 
-    unexpected_error db "Unexpected error", 10, 0
     cleanup db "cleanup", 10, 0
-    loop_enter db "entering loop", 10, 0 
     server_on db "Server is running on port 3000", 0
 
 section .text
@@ -37,6 +34,7 @@ global main
 main:
     sub rsp, 40
 
+    call todo_init
     call register_routes
 
     mov ecx, 0x0202
@@ -108,12 +106,20 @@ main:
     mov r15, rcx
 
     mov rcx, [r15 + connection.client_socket]
-    lea rdx, [rel recv_buffer]
+    lea rdx, [r15 + connection.recv_buffer]
     mov r8d, 2048
     xor r9d, r9d
     call recv
 
-    lea rsi, [rel recv_buffer]
+    mov [r15 + connection.bytes_received], rax
+
+    lea rcx, [r15 + connection.recv_buffer] 
+    mov rdx, 2048
+    call find_http_body_offset
+
+    mov [r15 + connection.body_offset], rax
+
+    lea rsi, [r15 + connection.recv_buffer]
     lea rdi, [r15 + connection.method]
     mov rcx, 7
 .copy_method:

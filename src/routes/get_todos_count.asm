@@ -1,14 +1,11 @@
+%include "src/macros/response_struc.inc"
+
 extern todo_total
 
 extern GetProcessHeap, HeapAlloc, HeapFree
 
 extern send_response
 extern sprintf, printf, strlen, strcat
-
-struc response_struc
-    .json_response_buffer: resb 256
-    .response_buffer: resb 2048
-endstruc
 
 section .data
     a db "Test", 0
