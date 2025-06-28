@@ -12,9 +12,11 @@ typedef struct
 
 RouteEntry table[TABLE_SIZE];
 
-extern void get_todos_count(void); // Declare external ASM handler
-extern void get_todos(void);       // Declare external ASM handler
-extern void post_todo(void);       // Declare external ASM handler
+extern void get_todos_count(void);  // Declare external ASM handler
+extern void get_todos(void);        // Declare external ASM handler
+extern void post_todo_create(void); // Declare external ASM handler
+extern void post_todo_update(void); // Declare external ASM handler
+extern void post_todo_delete(void); // Declare external ASM handler
 
 unsigned int hash(const char *method, const char *path)
 {
@@ -58,5 +60,7 @@ void register_routes()
 {
     insert("GET", "/todos/count", get_todos_count);
     insert("GET", "/todos", get_todos);
-    insert("POST", "/todos", post_todo);
+    insert("POST", "/todos/create", post_todo_create);
+    insert("POST", "/todos/update", post_todo_update);
+    insert("POST", "/todos/delete", post_todo_delete);
 }
