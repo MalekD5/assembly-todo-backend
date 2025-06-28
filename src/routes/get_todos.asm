@@ -23,6 +23,11 @@ section .data
                         db "Content-Length: %d",13,10
                         db "Connection: close",13,10,13,10
                         db "%s",0
+    empty_response_fmt  db "HTTP/1.1 204 No Content",13,10
+                        db "Content-Type: text/plain",13,10
+                        db "Content-Length: 0",13,10
+                        db "Connection: close",13,10,13,10
+                        db "%s",0
     heap_fail_msg db "Failed to allocate heap memory", 10, 0
     msg_parse_fail db "JSON parse failed", 10, 0
     ok_response db "OK", 10, 0
@@ -57,6 +62,9 @@ get_todos:
     mov r13, rax ; store the pointer to todos struct
 
     call get_todos_array   ; returns pointer in rax
+    test rax, rax
+    jz .empty_array
+    
     mov [r13 + todos_struc.list], rax
 
     call cJSON_CreateObject
@@ -163,6 +171,27 @@ get_todos:
     lea rcx, [rel msg_parse_fail]
     call printf
     
+    add rsp, 40
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    ret
+
+.empty_array:
+    mov rcx, r14 ; connection
+    lea rsi, [rel empty_response_fmt]
+    xor r9d, r9d
+    call send_response
+
+    call GetProcessHeap
+    mov rbx, rax
+
+    mov rcx, rbx
+    mov rdx, 0
+    mov r8, r13
+    call HeapFree
+
     add rsp, 40
     pop r15
     pop r14
